@@ -17,7 +17,8 @@ body, html {
     top: 200px;
 }
 
-.recording {
-	color: white;
-	background-color: red;
+#cancel_btn {
+    position: absolute;
+    left: 10px;
+    top: 230px;
 }
