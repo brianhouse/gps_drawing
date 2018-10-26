@@ -42,12 +42,28 @@ geolocate.on('geolocate', function(event) {
 
 let db = new DB()
 
+let shape = []
+
 map.on('click', function(event) {
 
-    db.insert('new', {'name': "Brian"})
+    let current_location = [event.lngLat.lng, event.lngLat.lat]
+    console.log(current_location)
+    shape.push(current_location)
+    // db.insert('new', {'name': "Brian"})
 
 })
 
-function process(response) {
-    console.log(response)
-}
+let record_btn = document.getElementById('record_btn')
+
+record_btn.addEventListener('click', function() {
+
+    console.log('clicked')
+    if (record_btn.value == 'Record') {
+        record_btn.setAttribute('class', 'recording')        
+        record_btn.value = 'Stop'
+    } else {
+        record_btn.value = 'Record'
+        record_btn.removeAttribute('class', 'recording')        
+    }
+
+})

@@ -10,3 +10,14 @@ body, html {
     bottom: 0;
     width: 100%;
 }
+
+#record_btn {
+    position: absolute;
+    left: 10px;
+    top: 200px;
+}
+
+.recording {
+	color: white;
+	background-color: red;
+}
