@@ -46,7 +46,7 @@ geolocate.on('geolocate', function(event) {
 
     if (recording) {
         path.push(current_location)
-        updateGeoJSON()    
+        updateGeoJSON(path)    
     }
 
 })
@@ -58,7 +58,7 @@ map.on('click', function(event) {
 
     if (recording) {
         path.push(current_location)
-        updateGeoJSON()    
+        updateGeoJSON(path)    
     }
 
 })
@@ -114,7 +114,7 @@ function cancelRecording() {
     start_marker.remove()
     path = []   // clear the path
 
-    updateGeoJSON()
+    updateGeoJSON(path)
 }
 
 function stopRecording() {
@@ -129,7 +129,7 @@ function stopRecording() {
     stop_marker.setLngLat(current_location)
     stop_marker.addTo(map)
 
-    db.insert('paths', path)
+    db.insert(path)
     path = []   // clear the path
 }
 
@@ -173,8 +173,19 @@ map.on('load', function() {
             'line-opacity': .8
         }
     })
-})
 
+    db.get(function(data) {
+
+        for (let path of data) {
+            if (!path.path) continue
+            startGeoJSON()
+            updateGeoJSON(path.path)
+        }
+
+
+    })
+
+})
 
 
 function startGeoJSON() {
@@ -187,8 +198,8 @@ function startGeoJSON() {
     })
 }
 
-function updateGeoJSON() {
-    geojson.features[geojson.features.length - 1].geometry.coordinates = path
+function updateGeoJSON(points) {
+    geojson.features[geojson.features.length - 1].geometry.coordinates = points
     map.getSource('drawing').setData(geojson)
 }
 

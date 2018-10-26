@@ -1,13 +1,13 @@
 class DB {
 
-    get(collection, f) {
+    get(f) {
         console.log('GET')
-        let url = base + database + "/collections/" + collection + "?apiKey=" + apiKey
+        let url = base + database + "/collections/paths?apiKey=" + apiKey
         let request = new XMLHttpRequest()
         request.open('GET', url)
         request.onload = function() {
           if (this.status >= 200 && this.status < 400) {
-            f(this.response)
+            f(JSON.parse(this.response))
           } else {
             console.log(this.status)
             console.log(this.response)
@@ -20,13 +20,9 @@ class DB {
         request.send()
     }
 
-    insert(collection, data) {
+    insert(path) {
         console.log("INSERT")
-        let url = base + database + "/collections/" + collection + "?apiKey=" + apiKey
-        let form = new FormData()
-        for(let d in data) {
-            form[d] = data[d]
-        }
+        let url = base + database + "/collections/paths?apiKey=" + apiKey
         let request = new XMLHttpRequest()
         request.open('POST', url)
         request.setRequestHeader('Content-Type', 'application/json')
@@ -42,7 +38,9 @@ class DB {
             console.log(this.status)
             console.log(this.response)
         }
-        request.send(JSON.stringify(data))
+        let encoded = JSON.stringify({path: path})
+        console.log(encoded)
+        request.send(encoded)
     }
 
 }
