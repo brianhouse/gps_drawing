@@ -44,9 +44,9 @@ geolocate.on('geolocate', function(event) {
     current_location = [event.coords.longitude, event.coords.latitude]
     console.log('geolocated', current_location)   
 
-    if (recording) {
+    if (active) {
         path.push(current_location)
-        updateGeoJSON(path)    
+        map.getSource('drawing').setData(geojson)   
     }
 
 })
@@ -56,30 +56,30 @@ map.on('click', function(event) {
     current_location = [event.lngLat.lng, event.lngLat.lat]
     console.log('clicked', current_location)        
 
-    if (recording) {
+    if (active) {
         path.push(current_location)
-        updateGeoJSON(path)    
+        console.log(path)                   // for testing, log the path so far to the console.        
+        map.getSource('drawing').setData(geojson)    
     }
 
 })
 
 
+// create variables that reference our HTML buttons
+let draw_btn = document.getElementById('draw_btn')
+
+// let cancel_btn = document.getElementById('cancel_btn')
+// cancel_btn.style['display'] = "none"    // initially hidden
+
+
 // this array will hold the sequence of points in our path
 let path = []
 
-// this variable will keep track of whether we should be adding points to our path or not
-let recording = false
-
-// create variables that reference our HTML buttons
-let record_btn = document.getElementById('record_btn')
-
-let cancel_btn = document.getElementById('cancel_btn')
-cancel_btn.style['display'] = "none"    // initially hidden
-
-
 // keep track of start and stop markers
-let start_marker = null
-let stop_marker = null
+let start_marker = new mapboxgl.Marker()    
+
+// this variable will keep track of whether we should be adding points to our path or not
+let active = false
 
 
 // create a new database
@@ -88,72 +88,69 @@ let db = new DB()
 
 // these functions will manage the state of the application
 
-function startRecording() {
-    recording = true                                // toggle recording mode 
-    record_btn.style['background-color'] = "red"    // make the button red
-    record_btn.style['color'] = "white"             // make it's text white
-    record_btn.value = 'Stop and save'              // change the text
-    cancel_btn.style['display'] = "block"           // display the cancel button
+function startDrawing() {
+    active = true                                // toggle drawing mode 
+    draw_btn.style['background-color'] = "red"    // make the button red
+    draw_btn.style['color'] = "white"             // make it's text white
+    draw_btn.value = 'Stop and save'              // change the text
+    // cancel_btn.style['display'] = "block"           // display the cancel button
 
     // create the start marker and place it at the current location
-    start_marker = new mapboxgl.Marker()    
     start_marker.setLngLat(current_location)
     start_marker.addTo(map)
 
-    startGeoJSON()
     path.push(current_location)
+    // console.log(path)     
+    geojson.features.push({
+        "type": "Feature",
+        "geometry": {
+            "type": "LineString",
+            "coordinates": path
+        }
+    })    
+    map.getSource('drawing').setData(geojson)    
 }
 
-function cancelRecording() {
-    recording = false
-    record_btn.value = 'Start'
-    record_btn.style['background-color'] = "white"
-    record_btn.style['color'] = "black"        
-    cancel_btn.style['display'] = "none"
+// function cancelDrawing() {
+//     active = false
+//     draw_btn.value = 'Start'
+//     draw_btn.style['background-color'] = "white"
+//     draw_btn.style['color'] = "black"        
+//     cancel_btn.style['display'] = "none"
 
-    start_marker.remove()
-    path = []   // clear the path
+//     start_marker.remove()
+//     path = []   // clear the path
 
-    updateGeoJSON(path)
-}
+//     updateGeoJSON(path)
+// }
 
-function stopRecording() {
-    recording = false
-    record_btn.value = 'Start'
-    record_btn.style['background-color'] = "white"
-    record_btn.style['color'] = "black"        
-    cancel_btn.style['display'] = "none"
-
-    // create the start marker and place it at the current location
-    stop_marker = new mapboxgl.Marker()    
-    stop_marker.setLngLat(current_location)
-    stop_marker.addTo(map)
+function stopDrawing() {
+    active = false
+    draw_btn.value = 'Start'
+    draw_btn.style['background-color'] = "white"
+    draw_btn.style['color'] = "black"        
+    // cancel_btn.style['display'] = "none"
 
     db.insert(path)
     path = []   // clear the path
 }
 
-record_btn.addEventListener('click', function() {
-    console.log('clicked record_btn')
-    if (record_btn.value == 'Start') {
-        startRecording()
+draw_btn.addEventListener('click', function() {
+    console.log('clicked draw_btn')
+    if (active) {
+        stopDrawing()
     } else {
-        stopRecording()
+        startDrawing()
     }
 })
 
-cancel_btn.addEventListener('click', function() {
-    console.log('clicked cancel_btn')    
-    cancelRecording()
-})
+// cancel_btn.addEventListener('click', function() {
+//     console.log('clicked cancel_btn')    
+//     cancelDrawing()
+// })
 
 
 //
-
-var geojson = {
-    "type": "FeatureCollection",
-    "features": []
-}
 
 map.on('load', function() {
     map.addLayer({
@@ -161,7 +158,7 @@ map.on('load', function() {
         'type': 'line',
         'source': {
             'type': 'geojson',
-            'data': geojson
+            'data': null
         },
         'layout': {
             'line-cap': 'round',
@@ -175,33 +172,23 @@ map.on('load', function() {
     })
 
     db.get(function(data) {
-
-        for (let path of data) {
-            if (!path.path) continue
-            startGeoJSON()
-            updateGeoJSON(path.path)
+        for (let item of data) {
+            if (!item.path) continue
+            geojson.features.push({
+                "type": "Feature",
+                "geometry": {
+                    "type": "LineString",
+                    "coordinates": item.path
+                }
+            })
+            map.getSource('drawing').setData(geojson)
         }
-
-
     })
 
 })
 
-
-function startGeoJSON() {
-    geojson.features.push({
-        "type": "Feature",
-        "geometry": {
-            "type": "LineString",
-            "coordinates": []
-        }
-    })
+let geojson = {
+    "type": "FeatureCollection",
+    "features": []
 }
-
-function updateGeoJSON(points) {
-    geojson.features[geojson.features.length - 1].geometry.coordinates = points
-    map.getSource('drawing').setData(geojson)
-}
-
-
 

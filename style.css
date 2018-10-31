@@ -11,14 +11,15 @@ body, html {
     width: 100%;
 }
 
-#record_btn {
+#draw_btn {
     position: absolute;
     left: 10px;
     top: 200px;
 }
 
-#cancel_btn {
+/*#cancel_btn {
     position: absolute;
     left: 10px;
     top: 230px;
 }
+*/
