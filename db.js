@@ -45,3 +45,5 @@ class DB {
 
 }
 
+// create a new database
+let db = new DB()
